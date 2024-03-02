@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt # plotting
 
 
 # ========================= Constants & parameters ========================== #
+#chmoki
 
 # Constants
 g = 9.81				# gravitational acceleration [m/s^2]
