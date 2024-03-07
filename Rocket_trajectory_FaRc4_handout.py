@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 Numerical calculation of rocket trajectory with air resistance.
 In 2 dimensions, and with a time-dependent mass.
@@ -16,18 +15,6 @@ import matplotlib.pyplot as plt # plotting
 # ========================= Constants & parameters ========================== #
 
 # Constants
-'''
-g = 9.81				# gravitational acceleration [m/s^2]
-rho_0 = 1.225			# air density at sea level [kg/m^3]
-H = np.inf	        	# scale height [m]. Hint to 3a: np.inf = positive infinity
-C_D = 0.5				# drag coefficient of the rocket [-]
-A = 1.0e-2          	# rocket body frontal area [m^2]. "e-2" is short for "*10**(-2)"
-m_0 = 20.000			# wet mass of the rocket [kg]
-m_f = 20.000			# dry mass of the rocket [kg]
-T_0 = 9000.1		    # average rocket engine thrust [N]
-t_b = 6.0		    	# burn time [s]
-theta_0 = 90*np.pi/180  # launch angle [rad]. Not used in 1D.
-'''
 g = 9.81				# [m/s^2]
 rho_0 = 1.225			# [kg/m^3]
 H =	7700       	        # [m]
@@ -39,15 +26,12 @@ T_0 = 2.5018e+3		    # [N]
 t_b = 6.09		    	# [s]
 theta_0 = 75*np.pi/180  # [rad]
 
-# Simulation parameters 
-'''
-dt = 0.01				# simulation time step [s]
-#t_0 = 0                 # simulation start [s]; not needed when we start at 0
-t_f = 131				# simulation time end [s]
-'''
+
+# Simulation parameters
 dt = 0.001				# simulation time step [s]
 #t_0 = 0                 # simulation start [s]; not needed when we start at 0
 t_f = 180				# simulation time end [s]
+
 
 
 # ================================ Functions ================================ #
@@ -76,8 +60,11 @@ def D_y(t, y, v, v_y):
     """
     return -0.5 * C_D * A * rho(y) * v * v_y
 
-def D_x (t, y, v, v_x):
-    
+def D_y(t, y, v, v_x):
+    """
+    Acceleration in the y-direction due to air resistance [m/s^2]
+    as a function of time [s], altitude y [m], and velocity v, v_y [m/s]
+    """
     return -0.5 * C_D * A * rho(y) * v * v_x
 
 
@@ -87,9 +74,9 @@ def D_x (t, y, v, v_x):
 N = int(np.ceil(t_f/dt))
 
 # We assume constant thrust, so we calculate the components here.
-T_y = T_0*np.sin(theta_0)
+
 #T_y = T_0 # In 1 dimension, we are always firing straight up.
-T_x = T_0*np.cos(theta_0)
+
 
 
 # Create data lists
@@ -102,6 +89,14 @@ a_y = np.zeros(N)
 x = np.zeros(N)
 v_x = np.zeros(N)
 a_x = np.zeros(N)
+
+y[0] = 0.0
+v_y[0] = 0.0
+x[0] = 0.0
+v_x[0] = 0.0 
+a_x[0] = 0.0 
+a_y[0] = 0.0 
+
 
 # We will use while loops to iterate over our data lists. For this, we will use
 # the auxillary variable n to keep track of which element we're looking at.
@@ -116,30 +111,36 @@ n_max = N - 1
 while t[n] < t_b and n < n_max:
     # Values needed for Euler's method
     # ---------------------------------- #
-    # Speed
-    #v = np.sqrt(v_y[n]**2) # Powers, like a^2, is written a**2
+    T_y = T_0*np.sin(theta_0)
+    T_x = T_0*np.cos(theta_0)
 
-    v = np.sqrt((v_y[n]**2)+(v_x[n]**2))
+    # Speed
+    v = np.sqrt((v_x[n]**2)+(v_y[n]**2)) # Powers, like a^2, is written a**2
 
     # Acceleration
     a_y[n] = ( T_y + D_y(t[n], y[n], v, v_y[n]) )/ m(t[n]) - g
+    a_x[n] = ( T_x + D_y(t[n], y[n], v, v_x[n]) )/ m(t[n])
     
-    a_x[n] = ( T_x + D_x(t[n], y[n], v, v_x[n]) )/ m(t[n])
-
     # Euler's method:
     # ---------------------------------- #
     # Position
     y[n+1] = y[n] + v_y[n]*dt
-
     x[n+1] = x[n] + v_x[n]*dt
     
     # Velocity
     v_y[n+1] = v_y[n] + a_y[n]*dt
-    
     v_x[n+1] = v_x[n] + a_x[n]*dt
     
+
+    theta_0 = np.arctan2(v_y[n+1], v_x[n+1])
     # Advance n with 1
+
+    #print("Velocity Components (v_x, v_y):", v_x[n], v_y[n])
+    #print("Calculated Angle (theta_0):", theta_0)
+
     n += 1
+
+
 
 # Coasting phase
 # ---------------------------------- #
@@ -147,30 +148,25 @@ while t[n] < t_b and n < n_max:
 while y[n] >= 0 and n < n_max:
     # Values needed for Euler's method
     # ---------------------------------- #
+
     # Speed
-    #v = np.sqrt(v_y[n]**2)
+    v = np.sqrt((v_x[n]**2)+(v_y[n]**2))
 
-    v = np.sqrt((v_y[n]**2)+(v_x[n]**2))
-    
     # Acceleration
-     
     a_y[n] = D_y(t[n], y[n], v, v_y[n]) / m_f - g
-
-    a_x[n] = D_x(t[n], y[n], v, v_x[n]) / m_f 
-
+    a_x[n] = D_y(t[n], y[n], v, v_x[n]) / m_f
+    
     # Euler's method:
     # ---------------------------------- #
     # Position
     y[n+1] = y[n] + v_y[n]*dt
-
     x[n+1] = x[n] + v_x[n]*dt
-    
     # Velocity
     v_y[n+1] = v_y[n] + a_y[n]*dt
-    
     v_x[n+1] = v_x[n] + a_x[n]*dt
-
-
+    
+    
+    
     # Advance n with 1
     n += 1
  
@@ -184,16 +180,15 @@ t = t[:n]
 y = y[:n]
 v_y = v_y[:n]
 a_y = a_y[:n]
-
 x = x[:n]
 v_x = v_x[:n]
 a_x = a_x[:n]
 
-
 # ============================== Data analysis ============================== #
 
+
 # Apogee
-n_a = np.argmax(y)  # Index at apogee
+n_a = np.argmax(y) # Index at apogee
 
 
 # =========================== Printing of results =========================== #
@@ -202,6 +197,7 @@ print('\n---------------------------------\n')
 print('Apogee time:\t', t[n_a], 's')
 print('... altitude:\t', round(y[n_a])/1000, 'km')
 print('\n---------------------------------\n')
+
 
 # =========================== Plotting of results =========================== #
 
