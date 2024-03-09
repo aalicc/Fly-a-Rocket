@@ -94,6 +94,7 @@ n_max = N - 1
 while t[n] < t_b and n < n_max:
     # Values needed for Euler's method
     # ---------------------------------- #
+
     # Speed
     v = np.sqrt((v_x[n]**2)+(v_y[n]**2)) # Powers, like a^2, is written a**2
     
@@ -138,6 +139,8 @@ while y[n] >= 0 and n < n_max:
         
     # Advance n with 1
     n += 1
+ 
+
 
 # When we exit the loops above, our index n has reached a value where the rocket
 # has crashed (or it has reached its maximum value). Since we don't need the
@@ -153,6 +156,7 @@ a_x = a_x[:n]
 # ============================== Data analysis ============================== #
 # Apogee
 n_a = np.argmax(y) # Index at apogee
+
 
 # =========================== Printing of results =========================== #
 
@@ -184,7 +188,6 @@ plt.figure('Acceleration')
 plt.plot (t, (((a_y + g) * np.sin(np.arctan(v_y/ v_x))) + (a_x * np.cos(np.arctan(v_y/ v_x)))) / g)
 plt.xlabel("Time [s]")
 plt.ylabel("Acceleration [g]")
-'''
-
+''' 
 plt.grid(linestyle='--')
-#plt.show()
+plt.show()
