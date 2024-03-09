@@ -2,9 +2,7 @@
 """
 Numerical calculation of rocket trajectory with air resistance.
 In 2 dimensions, and with a time-dependent mass.
-
-Created on Thu 07 Dec 2023 at 14:50:30.
-Last modified [dd.mm.yyyy]: 15.12.2023
+Original 1D code:
 @author: bjarne.aadnanes.bergtun
 """
 
@@ -25,7 +23,6 @@ m_f = 11.269			# [kg]
 T_0 = 2.5018e+3		    # [N]
 t_b = 6.09		    	# [s]
 theta_0 = 75*np.pi/180  # [rad]
-
 
 # Simulation parameters
 dt = 0.001				# simulation time step [s]
@@ -60,8 +57,8 @@ def D_y(t, y, v, v_y):
 
 def D_x(t, y, v, v_x):
     """
-    Acceleration in the y-direction due to air resistance [m/s^2]
-    as a function of time [s], altitude y [m], and velocity v, v_y [m/s]
+    Acceleration in the x-direction due to air resistance [m/s^2]
+    as a function of time [s], altitude y [m], and velocity v, v_x [m/s]
     """
     return -0.5 * C_D * A * rho(y) * v * v_x
 
@@ -69,6 +66,8 @@ def D_x(t, y, v, v_x):
 
 # Calculate the number of data points in our simulation
 N = int(np.ceil(t_f/dt))
+
+# Thrust
 T_y = T_0*np.sin(theta_0)
 T_x = T_0*np.cos(theta_0)
 
@@ -78,7 +77,6 @@ t = np.arange(t_f, step=dt) # runs from 0 to t_f with step length dt
 y = np.zeros(N)
 v_y = np.zeros(N)
 a_y = np.zeros(N)
-
 x = np.zeros(N)
 v_x = np.zeros(N)
 a_x = np.zeros(N)
@@ -96,14 +94,13 @@ n_max = N - 1
 while t[n] < t_b and n < n_max:
     # Values needed for Euler's method
     # ---------------------------------- #
-
     # Speed
     v = np.sqrt((v_x[n]**2)+(v_y[n]**2)) # Powers, like a^2, is written a**2
-
+    
     # Acceleration
     a_y[n] = ( T_y + D_y(t[n], y[n], v, v_y[n]) )/ m(t[n]) - g
     a_x[n] = ( T_x + D_x(t[n], y[n], v, v_x[n]) )/ m(t[n])
-    
+
     # Euler's method:
     # ---------------------------------- #
     # Position
@@ -114,11 +111,8 @@ while t[n] < t_b and n < n_max:
     v_y[n+1] = v_y[n] + a_y[n]*dt
     v_x[n+1] = v_x[n] + a_x[n]*dt
     
-    #theta_0 = np.arctan2(v_y[n+1], v_x[n+1])
-
     # Advance n with 1
     n += 1
-
 
 # Coasting phase
 # ---------------------------------- #
@@ -144,7 +138,7 @@ while y[n] >= 0 and n < n_max:
         
     # Advance n with 1
     n += 1
- 
+
 # When we exit the loops above, our index n has reached a value where the rocket
 # has crashed (or it has reached its maximum value). Since we don't need the
 # data after n, we redefine our lists to include only the points from 0 to n:
@@ -156,11 +150,9 @@ x = x[:n]
 v_x = v_x[:n]
 a_x = a_x[:n]
 
-
 # ============================== Data analysis ============================== #
 # Apogee
 n_a = np.argmax(y) # Index at apogee
-
 
 # =========================== Printing of results =========================== #
 
@@ -168,7 +160,6 @@ print('\n---------------------------------\n')
 print('Apogee time:\t', t[n_a], 's')
 print('... altitude:\t', round(y[n_a])/1000, 'km')
 print('\n---------------------------------\n')
-
 
 # =========================== Plotting of results =========================== #
 # Close all currently open figures , so we avoid mixing up old and new figures.
@@ -181,19 +172,19 @@ plt.xlabel("Time [s]")
 plt.ylabel("Altitude [m]")
 '''
 
+'''
 plt.figure('Speed')
 v = np.sqrt((v_x**2)+(v_y**2))
 plt.plot (t, v) # Speed graph
 plt.xlabel("Time [s]")
 plt.ylabel("Speed [m/s]")
-
-
+'''
 '''
 plt.figure('Acceleration')
-plt.plot (t, (acc_x/g))
+plt.plot (t, (((a_y + g) * np.sin(np.arctan(v_y/ v_x))) + (a_x * np.cos(np.arctan(v_y/ v_x)))) / g)
 plt.xlabel("Time [s]")
-plt.ylabel("Acceleration [m/s**2]")
+plt.ylabel("Acceleration [g]")
 '''
 
 plt.grid(linestyle='--')
-plt.show()
+#plt.show()
